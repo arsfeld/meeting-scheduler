@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}{{ application_name }}{% endblock %}
+
+{% block body %}
+  <p>Antes de continuar, você precisa definir sua gestão:</p>
+  
+  <form action="/admin" method="post">
+    <select name="gestao">
+      {% for gestao in gestoes %}
+        <option value="{{ gestao }}">{{ gestao }}</option>
+      {% endfor %}
+    </select>  
+    <input type=hidden name="action" value="mudarGestao">
+    <input type=hidden name="redirect" value="/">
+    <input type="submit" value="Entrar">
+  </form>
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}{{ application_name }}{% endblock %}
+
+{% block head %}
+  <script type="text/javascript">
+    var removeUser = function(userID) {
+        if (!confirm('Tem certeza de que deseja remover o usuario ' + userID + '?'))
+            return
+        dojo.byId(userID+"-actionButton").setAttribute("disabled", "disabled");
+        dojo.byId(userID+"-eventResponse").innerHTML = "<img src=\"/static/images/time.png\"> Removendo";        
+        var userNode = dojo.byId(userID);
+        var onLoad = function(resp) {
+          if (resp) {
+              dojo.byId(userID+"-eventResponse").innerHTML = "<img src=\"/static/images/exclamation.png\"> " + resp;
+              dojo.byId(userID+"-actionButton").removeAttribute("disabled");          
+          } else {            
+              var anim = dojo.fadeOut({node: userNode, duration: 1000});
+              var removeNode = function() {
+                userNode.parentNode.removeChild(userNode);
+              }
+              dojo.connect(anim, "onEnd", removeNode);
+              anim.play();
+          }
+        }
+        var contents = {};
+        contents['action'] = 'removeUser';
+        contents['userID'] = userID;
+        
+        console.log(contents);
+        dojo.xhrPost({ url: "/admin", content: contents, load: onLoad });
+    }
+    
+    var onSaveClicked = function(userID) {
+        dojo.byId(userID+"-eventResponse").innerHTML = "<img src=\"/static/images/time.png\"> Atualizando";
+        var onLoad = function(resp, args) {
+            dojo.byId(userID+"-eventResponse").innerHTML = "Salvado";
+        }
+        var formNode = dojo.byId(userID + "-form")
+        dojo.xhrPost({ url: "/admin",
+                       form: dojo.byId(userID + "-form"),
+                       load: function(data) {
+                          if (data == "saved") {
+                              dojo.byId(userID+"-eventResponse").innerHTML = "<img src=\"/static/images/accept.png\"> Atualizado";
+                          } else {
+                              dojo.byId(userID+"-eventResponse").innerHTML = data;
+                          }
+                       } });
+    }
+  </script>
+{% endblock %}
+
+{% block body %}
+  <h1>Usuários</h1>
+  {% for membro in membros %}
+    <div id="{{ membro.userid }}" class="container">
+        <h2>{{ membro.membro.user }}</h2>
+        <h3>{{ membro.userid }}</h3>
+        <form method="POST" id="{{ membro.userid }}-form">
+        {{ membro.form }}
+        <input type="hidden" name="action" value="editarUsuario">
+        <input type="hidden" name="userID" value="{{ membro.userid }}">
+        <a href="#" onClick='onSaveClicked("{{ membro.userid }}");'>Salvar</a>
+        </form>
+        
+      <a href="#" id="{{ membro.userid }}-actionButton" onclick='removeUser("{{ membro.userid }}");' >
+        Remove user
+      </a>    
+      <p id="{{ membro.userid }}-eventResponse"></p>
+    </div>
+  {% endfor %}
+{% endblock %}

@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}{{ application_name }} - {{ page.name|escape }} - Edit{% endblock %}
+
+{% block head %}
+    <script type="text/javascript">
+    
+    var onCellClick = function(node) {
+      dojo.toggleClass(node, "clicked");
+      /*var htmlcontent = "Cell (" + 
+        node.parentNode.rowIndex +"," +
+        node.cellIndex +") clicked => ";*/
+
+      var anim = function() {
+      if (dojo.hasClass(node, "clicked")) {
+        dojo.anim(node, { backgroundColor: "red"}, 1000);
+      } else {
+        dojo.anim(node, { backgroundColor: "white"}, 1000);
+      };
+      };
+      anim();
+      //dojo.byId("eventReport").innerHTML = htmlcontent + dojo.toJson(ids);
+    };
+    
+    function reset() {
+      ids = dojo.query('.clicked').forEach(function (node) {
+          dojo.anim(node, { backgroundColor: "white"}, 1000);
+      })          
+      dojo.query('.clicked').toggleClass("clicked");      
+      //saveList();
+    }
+    
+    function saveList() {
+      dojo.byId("saveButton").setAttribute("disabled", "disabled");
+      ids = dojo.query('.clicked').map(function (node) {
+        return node.id
+      })      
+      
+      var contents = {};
+      //contents['clicked'] = clicked;
+      //contents['id'] = node.id;
+      contents['list'] = dojo.toJson(ids)
+      dojo.xhrPost({ url: "/",
+                       content: contents,
+                       load: function(data) {                         
+                          dojo.byId("saveButton").removeAttribute("disabled");
+                          
+                       }
+                    });    
+    }
+    
+    function loadList () {
+        dojo.xhrGet ({
+            url: '/',
+            handleAs: 'json', // IMPORTANT: tells Dojo to automatically parse the HTTP response into a JSON object
+            content: {'action': 'getList'},
+            load: function (data) {
+                  dojo.forEach(data, function (nodeID) {
+                      node = dojo.byId(nodeID);
+                      dojo.toggleClass(node, "clicked", true);
+                      dojo.anim(node, { backgroundColor: "red"}, 1000);
+                      //dojo.style(node, "background-color", "red");
+                  });
+                  loadingNode = dojo.byId("loadingText");
+                  var anim = dojo.fadeOut({node: loadingNode, duration: 1000});
+                  var removeNode = function() {
+                    loadingNode.parentNode.removeChild(loadingNode);
+                  }
+                  dojo.connect(anim, "onEnd", removeNode);    
+                  anim.play();
+            },
+            error: function (error) {
+                console.error('Error: ', error);
+            }
+        });
+    }    
+    
+    
+    
+    var isSelecting = false;
+
+    var onTableMouseOut = function(node) {
+      //isSelecting = false;
+    }
+    
+    var onCellMouseOut = function(node) {
+      dojo.toggleClass(node, "mousing", false);
+    }
+    
+    var onCellMouseOver = function(node) {
+      if (isSelecting) {
+        if (!dojo.hasClass(node, "mousing")) {
+          dojo.toggleClass(node, "mousing", true);
+          onCellClick(node);
+        }
+      }    
+    }
+    
+    var onCellMouseDown = function(node) {
+      isSelecting = !isSelecting;
+    }
+    
+    var onCellMouseUp = function(node) {
+    //  isSelecting = false;    
+    }
+    
+    var init = function(){
+      loadList();
+    };
+    
+    dojo.addOnLoad(init);
+    </script>
+{% endblock %}
+{% block body %}
+    <p>Você pertence à gestão {{ membro.gestao }}</p>
+    
+    <p id="loadingText">Carregando compromissos... Por favor, aguarde.</p>
+    
+    <table id="tableHours" border=0 onmousedown='onCellMouseDown(this);' onmouseup='onCellMouseUp(this);' onmouseout='onTableMouseOut(this);'>
+      <caption>Selecione seu horário abaixo:</caption>
+      <thead>
+        <tr>
+          <th></th>
+          {% for day in days_of_week %}
+          <th scope="col">{{ day }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      
+      <tbody>
+        {% for hour in hours %}
+        <tr id="{{ hour }}" class="{% cycle odd,even %}">
+          <td>{{ hour }}:{% cycle 00,30 %}</td>  
+          {% for day in days_of_week %}
+          <td id="{{ forloop.counter0 }}_{{ forloop.parentloop.counter0 }}" class="cell"  onclick='onCellClick(this);' onmouseover='onCellMouseOver(this);' onmouseout='onCellMouseOut(this);'></td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>    
+    
+    <button id="saveButton" dojotype="dijit.form.Button" onclick='saveList();' >
+      Salvar
+    </button>
+    
+    <button dojotype="dijit.form.Button" onclick='reset();' >
+      Apagar todos
+    </button>    
+    
+    <div id="eventReport">
+      <p>Event reporter</p>
+    </div>
+    
+{% endblock %}

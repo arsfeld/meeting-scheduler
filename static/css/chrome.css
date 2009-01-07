@@ -1,0 +1,143 @@
+body {
+  margin: 0;
+  min-width:750px;
+}
+
+#header .top .title {
+  position: absolute;
+  left: 5px;
+  top: 5px;
+}
+
+#header .top .title img {
+  border: 0;
+}
+
+#header .top .login {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+}
+
+#header .top .login .nickname {
+  font-weight: bold;
+}
+
+#header .bottom {
+  clear: both;
+  background-color: #c3d9ff;
+  padding: 3px;
+  padding-left: 5px;
+  padding-right: 7px;
+}
+
+#header .bottom .attribution {
+  float: right;
+  padding-top: 3px;
+  padding-right: 4px;
+}
+
+#header .bottom .buttons .item {
+  margin-right: 4px;
+}
+
+#body {
+  clear: both;
+  margin: 0 auto;
+  width:750px;
+  
+}
+
+#footer {
+  margin-top: 4em;
+}
+
+.container {
+  margin-top: 10px;
+  color: #292929;
+  min-width: 200px;
+  border: 1px solid #BABABA;
+  float: left;
+/*  background-color: #ddd;*/
+  padding: 10px;
+  margin-left: 10px;
+  margin-bottom: 1em;
+  -o-border-radius: 10px;
+  -moz-border-radius: 12px;
+  -webkit-border-radius: 10px;
+  -webkit-box-shadow: 0px 3px 7px #adadad;
+  border-radius: 10px;
+  -moz-box-sizing: border-box;
+  -opera-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  -khtml-box-sizing: border-box;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* roScripts
+Table Design by Mihalcea Romeo
+www.roscripts.com
+----------------------------------------------- */
+
+table {
+		border-collapse:collapse;
+		background:#EFF4FB url(http://www.roscripts.com/images/teaser.gif) repeat-x;
+		border-left:1px solid #686868;
+		border-right:1px solid #686868;
+		font:0.8em/145% 'Trebuchet MS',helvetica,arial,verdana;
+		color: #333;
+}
+
+td, th {
+		padding:5px;
+}
+
+caption {
+		padding: 0 0 .5em 0;
+		text-align: left;
+		font-size: 1.4em;
+		font-weight: bold;
+		text-transform: uppercase;
+		color: #333;
+		background: transparent;
+}
+
+/* =head =foot
+----------------------------------------------- */
+
+thead th, tfoot th, tfoot td {
+		background:#333 url(/static/images/llsh.gif) repeat-x;
+		color:#fff
+}
+
+tfoot td {
+		text-align:right
+}
+
+/* =body
+----------------------------------------------- */
+
+tbody th, tbody td {
+		border-bottom: dotted 1px #333;
+		border-right: dotted 1px #333;
+}
+
+.cell {
+		background-color: #FFFFFF;
+}
+
+tbody th {
+		white-space: nowrap;
+}
+
+tbody th a {
+		color:#333;
+}
+
+.odd {}
+
+tbody tr:hover {
+		background:#fafafa
+}
+
