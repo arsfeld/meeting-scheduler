@@ -40,33 +40,47 @@
         dojo.xhrPost({ url: "/admin",
                        form: dojo.byId(userID + "-form"),
                        load: function(data) {
-                          if (data == "saved") {
+                          form = dojo.byId(userID + '-innerForm');
+                          form.innerHTML = data;
+                          status = dojo.query("[id='status']", form)[0].innerHTML;
+                          if (status == "ok") {
                               dojo.byId(userID+"-eventResponse").innerHTML = "<img src=\"/static/images/accept.png\"> Atualizado";
                           } else {
-                              dojo.byId(userID+"-eventResponse").innerHTML = data;
-                          }
+                              dojo.byId(userID+"-eventResponse").innerHTML = "<img src=\"/static/images/exclamation.png\"> " + status;
+                          };
                        } });
     }
+      
   </script>
 {% endblock %}
 
 {% block body %}
-  <h1>Usuários</h1>
+
+  <h1>Administração</h1>
+  
+  <h2>Usuários</h2>
   {% for membro in membros %}
-    <div id="{{ membro.userid }}" class="container">
+    <div id="{{ membro.userid }}" class="box rectbox">
         <h2>{{ membro.membro.user }}</h2>
         <h4>{{ membro.userid }}</h4>
-        <form method="POST" id="{{ membro.userid }}-form">
-        {{ membro.form }}
-        <input type="hidden" name="action" value="editarUsuario">
-        <input type="hidden" name="userID" value="{{ membro.userid }}">
-        <a href="#" onClick='onSaveClicked("{{ membro.userid }}");'>Salvar</a>
-        </form>
-        
-      <a href="#" id="{{ membro.userid }}-actionButton" onclick='removeUser("{{ membro.userid }}");' >
-        Remove user
-      </a>    
-      <p id="{{ membro.userid }}-eventResponse"></p>
+        {% if membro.allow_edit %}
+            <form method="POST" id="{{ membro.userid }}-form">
+                <div id="{{ membro.userid }}-innerForm">
+                {{ membro.form }}
+                </div>
+                <input type="hidden" name="action" value="editarUsuario">
+                <input type="hidden" name="userID" value="{{ membro.userid }}">
+            </form>
+            <a href="#" onClick='onSaveClicked("{{ membro.userid }}");'>Salvar</a>
+            <a href="#" id="{{ membro.userid }}-actionButton" onclick='removeUser("{{ membro.userid }}");' >
+                Remover usuário
+            </a>
+        {% else %}
+            <p>Nome: {{ membro.membro.nome }}</p>
+            <p>Gestão: {{ membro.membro.gestao }}</p>
+            <p>Coordenador: {{ membro.membro.coordenador|yesno:"Sim,Não"}}</p>
+        {% endif %}
+        <p id="{{ membro.userid }}-eventResponse"></p>
     </div>
   {% endfor %}
 {% endblock %}

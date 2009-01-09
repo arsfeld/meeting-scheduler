@@ -1,36 +1,63 @@
 {% extends "base.html" %}
 
-{% block title %}{{ application_name }} - {{ page.name|escape }} - Edit{% endblock %}
+{% block title %}{{ application_name }}{% endblock %}
 
 {% block head %}
+    <link href="/static/css/table.css" rel="stylesheet" type="text/css"/ >
     <script type="text/javascript">
     
+    var setEvento = function(msg) {
+      dojo.byId("eventReport").innerHTML = msg;
+    }
+
+    var selectingRow = null;  
+        
     var onCellClick = function(node) {
-      dojo.toggleClass(node, "clicked");
+      if (selectingRow != node.parentNode.rowIndex) {
+          //return;
+      };
+      toggleCell(node, null, true);
+    };
+      
+    var toggleCell = function(node, state, anim) {
+      //dojo.query("[cellIndex='']")
+      if (state == null) {
+          dojo.toggleClass(node, "clicked");
+      } else {
+          dojo.toggleClass(node, "clicked", state);
+      }
       /*var htmlcontent = "Cell (" + 
         node.parentNode.rowIndex +"," +
         node.cellIndex +") clicked => ";*/
-
-      var anim = function() {
+      
       if (dojo.hasClass(node, "clicked")) {
-        dojo.anim(node, { backgroundColor: "red"}, 1000);
+          if (anim) {
+              dojo.anim(node, { backgroundColor: "red"}, 1000);
+          } else {
+              dojo.style(node, "backgroundColor", "red");
+          };
       } else {
-        dojo.anim(node, { backgroundColor: "white"}, 1000);
+          if (anim) {
+              dojo.anim(node, { backgroundColor: "white"}, 1000);
+          } else {
+              dojo.style(node, "backgroundColor", "white");
+          };
       };
-      };
-      anim();
-      //dojo.byId("eventReport").innerHTML = htmlcontent + dojo.toJson(ids);
     };
     
     function reset() {
-      ids = dojo.query('.clicked').forEach(function (node) {
-          dojo.anim(node, { backgroundColor: "white"}, 1000);
+    
+      dojo.query('.clicked').forEach(function (node) {
+          //dojo.anim(node, { backgroundColor: "white"}, 1000);
+          toggleCell(node, false, false);
       })          
-      dojo.query('.clicked').toggleClass("clicked");      
+      //dojo.query('.clicked').toggleClass("clicked");
       //saveList();
+      setEvento("Eventos apagados. Falta salvar.")
     }
     
     function saveList() {
+      setEvento("Salvando...")
       dojo.byId("saveButton").setAttribute("disabled", "disabled");
       ids = dojo.query('.clicked').map(function (node) {
         return node.id
@@ -44,30 +71,28 @@
                        content: contents,
                        load: function(data) {                         
                           dojo.byId("saveButton").removeAttribute("disabled");
-                          
+                          setEvento("");
                        }
                     });    
     }
     
     function loadList () {
+        var loadingNode = dojo.byId("loadingText");
+        setEvento("Carregando...");
+        //dojo.fadeIn({node: loadingNode, duration: 1000}).play();
         dojo.xhrGet ({
             url: '/',
             handleAs: 'json', // IMPORTANT: tells Dojo to automatically parse the HTTP response into a JSON object
             content: {'action': 'getList'},
             load: function (data) {
+                  dojo.query('.clicked').forEach(function(node) {
+                      toggleCell(node, false, false);
+                  });
                   dojo.forEach(data, function (nodeID) {
                       node = dojo.byId(nodeID);
-                      dojo.toggleClass(node, "clicked", true);
-                      dojo.anim(node, { backgroundColor: "red"}, 1000);
-                      //dojo.style(node, "background-color", "red");
+                      toggleCell(node, true, false);
                   });
-                  loadingNode = dojo.byId("loadingText");
-                  var anim = dojo.fadeOut({node: loadingNode, duration: 1000});
-                  var removeNode = function() {
-                    loadingNode.parentNode.removeChild(loadingNode);
-                  }
-                  dojo.connect(anim, "onEnd", removeNode);    
-                  anim.play();
+                  setEvento("Eventos carregados");
             },
             error: function (error) {
                 console.error('Error: ', error);
@@ -112,11 +137,13 @@
     </script>
 {% endblock %}
 {% block body %}
-    <p>Você pertence à gestão {{ membro.gestao }}</p>
+    <h1>Horário</h1>
     
-    <p id="loadingText">Carregando compromissos... Por favor, aguarde.</p>
+    <p><p>
     
-    <table id="tableHours" border=0 onmousedown='onCellMouseDown(this);' onmouseup='onCellMouseUp(this);' onmouseout='onTableMouseOut(this);'>
+    
+    <div style="float: left;">
+    <table id="tableHours" border=0  onmouseout='onTableMouseOut(this);'>
       <caption>Selecione seu horário abaixo:</caption>
       <thead>
         <tr>
@@ -130,18 +157,24 @@
       <tbody>
         {% for hour in hours %}
         <tr id="{{ hour }}" class="{% cycle odd,even %}">
-          <td>{{ hour }}:{% cycle 00,30 %}</td>  
+          <td class="hourcell">{{ hour }}:{% cycle 00,30 %}</td>  
           {% for day in days_of_week %}
-          <td id="{{ forloop.counter0 }}_{{ forloop.parentloop.counter0 }}" class="cell"  onclick='onCellClick(this);' onmouseover='onCellMouseOver(this);' onmouseout='onCellMouseOut(this);'></td>
+          <td id="{{ forloop.counter0 }}_{{ forloop.parentloop.counter0 }}" class="cell" onclick='onCellClick(this);''></td>
           {% endfor %}
         </tr>
         {% endfor %}
       </tbody>
     </table>    
+    </div>
+    <div style="float: left; padding: 10px; text-align: left; max-width: 500px;">
     
     <button id="saveButton" dojotype="dijit.form.Button" onclick='saveList();' >
       Salvar
     </button>
+
+    <button dojotype="dijit.form.Button" onclick='loadList();' >
+      Cancelar
+    </button>    
     
     <button dojotype="dijit.form.Button" onclick='reset();' >
       Apagar todos
@@ -149,6 +182,20 @@
     
     <div id="eventReport">
       <p>Event reporter</p>
+    </div>
+
+    <p id="loadingText" style="display: none;">Carregando compromissos... Por favor, aguarde.</p>
+        
+    <h3>Como utilizar:</h3>
+    <p>Clique no horário que você deseja mudar para ocupado ou desocupado.<br>
+    Os horários em vermelho estão ocupados, e os em branco estão desocupados.</p>
+    <p>Quando você acabar de editar seus horários, clique em Salvar acima</p>
+    <p>Se você fez um erro desde a última vez que salvou, clique em Cancelar
+    que os horários antigos serão carregados.</p>
+    <p>Clique em Apagar todos para mudar todos os horários para desocupados.
+    Lembre-se de salvar depois de apagar todos</p>
+    
+    
     </div>
     
 {% endblock %}

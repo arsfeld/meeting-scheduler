@@ -35,30 +35,35 @@ from google.appengine.ext import webapp
 from google.appengine.ext.webapp import template
 from google.appengine.ext.db import djangoforms
 
+from django.utils import translation
+translation.activate('pt-br')
+
 _DEBUG = True
 
 DAY_START = 8
 
+DIAS_SEMANA = ('Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado')
+
 GESTOES = set(["Projetos", "Marketing", "Desenvolvimento"])
 
-class Compromisso(db.Model):
-    user = db.UserProperty()
-    day = db.IntegerProperty()
-    start = db.IntegerProperty()
-    
 class Gestao(db.Model):
     nome = db.StringProperty()
-    
+
 class Membro(db.Model):
     user = db.UserProperty()
-    gestao = db.StringProperty(choices=GESTOES)
+    nome = db.StringProperty(required = True)
+    gestao = db.StringProperty(required = True, verbose_name="Gestão", choices=GESTOES)
     coordenador = db.BooleanProperty(default=False)
     compromissos = db.ListProperty(str)
-    
+
 class MembroForm(djangoforms.ModelForm):
   class Meta:
     model = Membro
     exclude = ['user', 'compromissos']
+    
+class GestaoForm(djangoforms.ModelForm):
+    class Meta:
+        model = Gestao
 
 class BaseRequestHandler(webapp.RequestHandler):
     """Supplies a common template generation function.
@@ -68,25 +73,28 @@ class BaseRequestHandler(webapp.RequestHandler):
     in the 'request' variable.
     """
     def generate(self, template_name, **template_values):
+
         values = {
+            'is_admin': users.is_current_user_admin(),
             'request': self.request,
             'user': users.GetCurrentUser(),
             'login_url': users.CreateLoginURL(self.request.uri),
             'logout_url': users.CreateLogoutURL(self.request.uri),
             'application_name': 'FoG Horarios',
-            'days_of_week': list(calendar.day_name),
-            'hours': [i / 2 + DAY_START for i in range((24-DAY_START) * 2)],
-            'membro': Membro.all().filter('user =', users.GetCurrentUser()).get(),
+            'membro': self.get_membro_atual(),
             'gestoes': GESTOES,
         }
         values.update(template_values)
         directory = os.path.dirname(__file__)
         path = os.path.join(directory, os.path.join('templates', template_name))
         self.response.out.write(template.render(path, values, debug=_DEBUG))
+        
+    def get_membro_atual(self):
+        membro = Membro.all().filter('user =', users.GetCurrentUser()).get()        
+        return membro        
 
 #class EditRequestHandler(webapp.RequestHandler):
     
-
 class MainPage(BaseRequestHandler):
     def get(self):
         action = self.request.get('action')
@@ -95,12 +103,14 @@ class MainPage(BaseRequestHandler):
             self.response.out.write(json.dumps(membro.compromissos))
         else:
             if not membro:
-                self.generate('escolher_gestao.html')
+                self.generate('escolher_gestao.html', user_form = MembroForm().as_p())
             else:
-                self.generate('editar_calendario.html')
+                self.generate('editar_calendario.html',
+                    days_of_week = DIAS_SEMANA,
+                    hours = [i / 2 + DAY_START for i in range((24-DAY_START) * 2)],
+                )
     
-    def post(self):
-        
+    def post(self):        
         #regexp = re.compile('(\d+)_(\d+)')        
         #day_string, hour_string = regexp.search(self.request.get('id')).groups()
         compromissos = json.loads(self.request.get('list'))
@@ -110,13 +120,26 @@ class MainPage(BaseRequestHandler):
         membro.put()
 
 class Admin(BaseRequestHandler):
+    def createForm(self, membro):
+        if self.allow_edit(membro):
+            return MembroForm(instance = membro).as_p()   
+        else:
+            return str(membro.user)
+        
+    def allow_edit(self, membro):
+        #return membro
+        return users.is_current_user_admin() or (not membro) or membro.user == users.GetCurrentUser()
+    
     def get(self):
+        #self.get_membro_atual()
         membros = Membro.all()
-        self.generate('admin.html', 
+        self.generate('admin.html',             
             membros = [{'membro': membro,
                         'userid': membro.user.email(),
-                        'form': MembroForm(instance = membro).as_p()
-                       } for membro in membros])
+                        'form': self.createForm(membro),
+                        'allow_edit': self.allow_edit(membro),
+                       } for membro in membros],
+        )
         
     def post(self):
         action = self.request.get('action')
@@ -125,28 +148,49 @@ class Admin(BaseRequestHandler):
             user = users.User(userID)
         else:
             user = users.GetCurrentUser()
-        if not users.is_current_user_admin() and user != users.GetCurrentUser():
-            self.response.out.write('Você não pode editar outros usuários')
-            return
         membro = Membro.all().filter('user =', user).get()
+        if not self.allow_edit(membro):
+            self.response.out.write('Você não pode editar outros usuários')
+            return        
+        status = None
         if action == 'removeUser':
             if user == users.GetCurrentUser():
                 self.response.out.write("Não é possivel remover o usuário atual")
             else:
                 membro.delete()
+        elif action == 'editarGestao':
+            gestaoID = self.request.get('gestaoID')
+            if gestaoID:
+                gestao = Gestao.get(gestaoID)
+            else:
+                gestao = None
+            form = GestaoForm(data=self.request.POST, instance = gestao)            
+            form.save()
         elif action == 'editarUsuario':
             form = MembroForm(data=self.request.POST, instance=membro)
             if form.is_valid():
-                form.save()
-                self.response.out.write("saved")
+                form.save(False)
+                if form.instance.user == None:
+                    form.instance.user = user
+                form.instance.put()
+                status = "ok"
             else:
-                self.response.out.write("error")
+                status = "Verifique os valores"
+            
+            self.response.out.write(form.as_p())
+            #else:
+            #    return
+            #    self.response.out.write("saved")
+            #else:
+            #    self.response.out.write("error")
         elif action == 'mudarGestao':
             if not membro:
                 membro = Membro()
                 membro.user = users.GetCurrentUser()
             membro.gestao = self.request.get('gestao')
-            membro.put()            
+            membro.put()
+        if status:
+            self.response.out.write("<div id=\"status\" style=\"display: none\">%s</div>" % status)            
         redirect = self.request.get('redirect')
         if redirect:
             self.redirect(redirect)

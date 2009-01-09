@@ -1,6 +1,6 @@
 body {
-  margin: 0;
-  min-width:750px;
+  margin: 20px;
+  /*min-width:800px;*/
 }
 
 #header .top .title {
@@ -15,6 +15,7 @@ body {
 
 #header .top .login {
   position: absolute;
+  float: right;
   top: 7px;
   right: 7px;
 }
@@ -37,14 +38,15 @@ body {
   padding-right: 4px;
 }
 
-#header .bottom .buttons .item {
-  margin-right: 4px;
-}
-
 #body {
   clear: both;
-  margin: 0 auto;
-  width:750px;
+  /*margin: 0 auto;
+  /*width:800px;*/
+  /*
+  margin-left: auto;
+  margin-right: auto;  
+  */
+  text-align: center;
   
 }
 
@@ -52,10 +54,32 @@ body {
   margin-top: 4em;
 }
 
-.container {
-  margin-top: 10px;
+.loginbox {
+    width: 25em; 
+    margin: 1em auto;
+    text-align:left;
+    padding: 0 2em 1.25em 2em;
+    color: #292929;
+    border: 1px solid #BABABA;
+    -o-border-radius: 10px;
+    -moz-border-radius: 12px;
+    -webkit-border-radius: 10px;
+    -webkit-box-shadow: 0px 3px 7px #adadad;
+    border-radius: 10px;
+    -moz-box-sizing: border-box;
+    -opera-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    -khtml-box-sizing: border-box;
+    box-sizing: border-box;
+    overflow: hidden;    
+}
+
+.box {
+  /*margin-top: 10px;*/
+  text-align: left;
+  margin: 1em auto;
+  width: 20em;  
   color: #292929;
-  width: 200px;
   border: 1px solid #BABABA;
   float: left;
 /*  background-color: #ddd;*/
@@ -75,69 +99,15 @@ body {
   overflow: hidden;
 }
 
-/* roScripts
-Table Design by Mihalcea Romeo
-www.roscripts.com
------------------------------------------------ */
-
-table {
-		border-collapse:collapse;
-		background:#EFF4FB url(http://www.roscripts.com/images/teaser.gif) repeat-x;
-		border-left:1px solid #686868;
-		border-right:1px solid #686868;
-		font:0.8em/145% 'Trebuchet MS',helvetica,arial,verdana;
-		color: #333;
+.centered {
+    text-align: left;
+    margin-left: auto;
+    margin-right: auto;
+    width: 20em;
 }
 
-td, th {
-		padding:5px;
+
+.rectbox {
+    min-width: 200px;
+    min-height: 250px;
 }
-
-caption {
-		padding: 0 0 .5em 0;
-		text-align: left;
-		font-size: 1.4em;
-		font-weight: bold;
-		text-transform: uppercase;
-		color: #333;
-		background: transparent;
-}
-
-/* =head =foot
------------------------------------------------ */
-
-thead th, tfoot th, tfoot td {
-		background:#333 url(/static/images/llsh.gif) repeat-x;
-		color:#fff
-}
-
-tfoot td {
-		text-align:right
-}
-
-/* =body
------------------------------------------------ */
-
-tbody th, tbody td {
-		border-bottom: dotted 1px #333;
-		border-right: dotted 1px #333;
-}
-
-.cell {
-		background-color: #FFFFFF;
-}
-
-tbody th {
-		white-space: nowrap;
-}
-
-tbody th a {
-		color:#333;
-}
-
-.odd {}
-
-tbody tr:hover {
-		background:#fafafa
-}
-

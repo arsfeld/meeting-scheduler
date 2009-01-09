@@ -2,17 +2,51 @@
 
 {% block title %}{{ application_name }}{% endblock %}
 
+{% block head %}
+  <script type="text/javascript">
+    var init = function(){
+      dojo.query("input[type='submit']").onclick(function(e){
+          dojo.stopEvent(e); // prevent sending the form
+          var btn = e.target;
+          dojo.xhrPost({
+              form: btn.form,
+              load: function(data){
+                  // replace the form with the response
+                  var form = dojo.byId("userForm");
+                  form.innerHTML = data;
+                  status = dojo.query("[id='status']", form)[0].innerHTML;                              
+                  if (status == "ok") {
+                      //form.innetHTML = "Por favor, aguarde...";
+                      window.location = '/';
+                  };
+              }
+          });
+      });      
+    };
+    
+    dojo.addOnLoad(init);
+  </script>
+{% endblock %}
+
 {% block body %}
-  <p>Antes de continuar, você precisa definir sua gestão:</p>
-  
-  <form action="/admin" method="post">
-    <select name="gestao">
-      {% for gestao in gestoes %}
-        <option value="{{ gestao }}">{{ gestao }}</option>
-      {% endfor %}
-    </select>
-    <input type=hidden name="action" value="mudarGestao">
-    <input type=hidden name="redirect" value="/">
-    <input type="submit" value="Entrar">
-  </form>
+  <p>Antes de continuar, você precisa definir alguns detalhes:</p>
+  <div>
+  <div class="loginbox">
+    <form action="/admin" method="post">
+      <!--
+      <select name="gestao">
+        {% for gestao in gestoes %}
+          <option value="{{ gestao }}">{{ gestao }}</option>
+        {% endfor %}
+      </select>
+      -->
+      <div id="userForm">
+        {{ user_form }}
+      </div>
+      <input type=hidden name="action" value="editarUsuario">
+      <!--input type=hidden name="redirect" value="/"-->
+      <input type="submit" value="Entrar" style="float: right;">
+    </form>
+  </div>
+  </div>
 {% endblock %}

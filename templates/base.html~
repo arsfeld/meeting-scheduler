@@ -9,11 +9,10 @@
     <script type="text/javascript">
     google.load("dojo", "1.2.3");
     </script>
-
-
     {% block head %}{% endblock %}
   </head>
   <body>
+    
     <div id="header">
       <div class="top">
         <div class="login">
@@ -22,6 +21,8 @@
             {% if membro %}
             <span class="item">Gestão: {{ membro.gestao }} | </span>
             {% endif %}
+            <span class="item"><a href="/">Horários</a> | </span>
+            <span class="item"><a href="/admin">Admin</a> | </span>
             <span class="item"><a href="{{ logout_url|escape }}">Sign out</a></span>
           {% else %}
             <span class="item"><a href="{{ login_url|escape }}">Sign in</a></span>
@@ -29,10 +30,9 @@
         </div>
       </div>
     </div>
-
     
-    
-    <div id="body">{% block body %}{% endblock %}</div>
+    <div id="body">
+    {% block body %}{% endblock %}</div>
     <div id="footer">
     </div>
   </body>
