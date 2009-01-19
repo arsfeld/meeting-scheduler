@@ -5,135 +5,194 @@
 {% block head %}
     <link href="/static/css/table.css" rel="stylesheet" type="text/css"/ >
     <script type="text/javascript">
-    
-    var setEvento = function(msg) {
-      dojo.byId("eventReport").innerHTML = msg;
-    }
+    	var saveInterval = 5000;
+        var autoSave = true;
+        var modified = false;
+        var timer = null;
 
-    var selectingRow = null;  
-        
-    var onCellClick = function(node) {
-      if (selectingRow != node.parentNode.rowIndex) {
-          //return;
-      };
-      toggleCell(node, null, true);
-    };
-      
-    var toggleCell = function(node, state, anim) {
-      //dojo.query("[cellIndex='']")
-      if (state == null) {
-          dojo.toggleClass(node, "clicked");
-      } else {
-          dojo.toggleClass(node, "clicked", state);
-      }
-      /*var htmlcontent = "Cell (" + 
-        node.parentNode.rowIndex +"," +
-        node.cellIndex +") clicked => ";*/
-      
-      if (dojo.hasClass(node, "clicked")) {
-          if (anim) {
-              dojo.anim(node, { backgroundColor: "red"}, 1000);
-          } else {
-              dojo.style(node, "backgroundColor", "red");
-          };
-      } else {
-          if (anim) {
-              dojo.anim(node, { backgroundColor: "white"}, 1000);
-          } else {
-              dojo.style(node, "backgroundColor", "white");
-          };
-      };
-    };
-    
-    function reset() {
-    
-      dojo.query('.clicked').forEach(function (node) {
-          //dojo.anim(node, { backgroundColor: "white"}, 1000);
-          toggleCell(node, false, false);
-      })          
-      //dojo.query('.clicked').toggleClass("clicked");
-      //saveList();
-      setEvento("Eventos apagados. Falta salvar.")
-    }
-    
-    function saveList() {
-      setEvento("Salvando...")
-      dojo.byId("saveButton").setAttribute("disabled", "disabled");
-      ids = dojo.query('.clicked').map(function (node) {
-        return node.id
-      })      
-      
-      var contents = {};
-      //contents['clicked'] = clicked;
-      //contents['id'] = node.id;
-      contents['list'] = dojo.toJson(ids)
-      dojo.xhrPost({ url: "/",
-                       content: contents,
-                       load: function(data) {                         
-                          dojo.byId("saveButton").removeAttribute("disabled");
-                          setEvento("");
-                       }
-                    });    
-    }
-    
-    function loadList () {
-        var loadingNode = dojo.byId("loadingText");
-        setEvento("Carregando...");
-        //dojo.fadeIn({node: loadingNode, duration: 1000}).play();
-        dojo.xhrGet ({
-            url: '/',
-            handleAs: 'json', // IMPORTANT: tells Dojo to automatically parse the HTTP response into a JSON object
-            content: {'action': 'getList'},
-            load: function (data) {
-                  dojo.query('.clicked').forEach(function(node) {
-                      toggleCell(node, false, false);
-                  });
-                  dojo.forEach(data, function (nodeID) {
-                      node = dojo.byId(nodeID);
-                      toggleCell(node, true, false);
-                  });
-                  setEvento("Eventos carregados");
-            },
-            error: function (error) {
-                console.error('Error: ', error);
+        dojo.require("dojox.timing");
+
+        var timerTick = function () {
+            //setEvento("Modificado: " + modified);
+            if (modified) {
+                saveList();
             }
-        });
-    }    
-    
-    
-    
-    var isSelecting = false;
-
-    var onTableMouseOut = function(node) {
-      //isSelecting = false;
-    }
-    
-    var onCellMouseOut = function(node) {
-      dojo.toggleClass(node, "mousing", false);
-    }
-    
-    var onCellMouseOver = function(node) {
-      if (isSelecting) {
-        if (!dojo.hasClass(node, "mousing")) {
-          dojo.toggleClass(node, "mousing", true);
-          onCellClick(node);
+            modified = false;
         }
-      }    
-    }
+        
+        var timerStartStop = function (running) {
+            autoSave = running;
+            if (timer.isRunning == running)
+                return;
+            saveButton = dojo.byId('saveButton');
+            cancelButton = dojo.byId('cancelButton');
+            if (running) {
+                timer.start();
+                saveButton.setAttribute("disabled", true);
+                cancelButton.setAttribute("disabled", true);
+            } else {
+                timer.stop();
+                saveButton.removeAttribute("disabled");
+                cancelButton.removeAttribute("disabled");
+                
+            }
+        }
     
-    var onCellMouseDown = function(node) {
-      isSelecting = !isSelecting;
-    }
+        var setEvento = function(msg) {
+            dojo.byId("eventReport").innerHTML = msg;
+        }
+
+        var selectingRow = null;  
+            
+        var onCellClick = function(node) {
+            if (selectingRow != node.parentNode.rowIndex) {
+              //return;
+            };
+            modified = true;
+            toggleCell(node, null, true);
+            
+        };
+          
+        var toggleCell = function(node, state, anim) {
+            if (state == null) {
+                dojo.toggleClass(node, "clicked");
+            } else {
+                dojo.toggleClass(node, "clicked", state);
+            };
+            /*var htmlcontent = "Cell (" + 
+              node.parentNode.rowIndex +"," +
+              node.cellIndex +") clicked => ";*/
+            
+            if (dojo.hasClass(node, "clicked")) {
+                if (anim) {
+                    dojo.anim(node, { backgroundColor: "red"}, 1000);
+                } else {
+                    dojo.style(node, "backgroundColor", "red");
+                };
+            } else {
+                if (anim) {
+                    dojo.anim(node, { backgroundColor: "white"}, 1000);
+                } else {
+                    dojo.style(node, "backgroundColor", "white");
+                };
+            };
+        };
+        
+        var reset = function () {    
+            dojo.query('.clicked').forEach(function (node) {
+                toggleCell(node, false, false);
+            });
+            modified = true;
+            if (autoSave) {
+                setEvento("Eventos apagados, salvando..."); 
+                saveList();                
+            } else {
+                setEvento("Eventos apagados. Falta salvar.");
+            };
+        }
+        
+        var saveList = function () {
+            setEvento("Salvando...");
+            var saveButton = dojo.byId("saveButton");
+            var saveButtonDisabled = saveButton.hasAttribute("disabled");            
+            saveButton.setAttribute("disabled", "disabled");
+            ids = dojo.query('.clicked').map(function (node) {
+                return node.id
+            });
+            var timerRunning = timer.isRunning;
+            timer.stop();
+            
+            var contents = {};
+            contents['action'] = 'saveList';
+            contents['list'] = dojo.toJson(ids);
+            contents['userID'] = "{{ user_id }}";
+            dojo.xhrPost({ 
+                url: "/horario",
+                content: contents,
+                load: function(data) {                         
+                    if (!saveButtonDisabled) {
+                        saveButton.removeAttribute("disabled");
+                    };
+                    if (timerRunning) {
+                        timer.start()
+                    };
+                    setEvento("<img src=\"/images/accept.png\"> Eventos salvos.");
+                },
+                error: function(error) {                         
+                    if (!saveButtonDisabled) {
+                        saveButton.removeAttribute("disabled");
+                    };
+                    if (timerRunning) {
+                        timer.start()
+                    };
+                    setEvento("Erro ao salvar (" + error + ")");
+                }
+            });    
+        };
+        
+        var loadList = function () {
+            var loadingNode = dojo.byId("loadingText");
+            setEvento("Carregando...");
+            //dojo.fadeIn({node: loadingNode, duration: 1000}).play();
+            dojo.xhrPost ({
+                url: '/horario',
+                handleAs: 'json', // IMPORTANT: tells Dojo to automatically parse the HTTP response into a JSON object
+                content: {'action': 'getList', 'userID': "{{ user_id }}"},
+                load: function (data) {
+                      dojo.query('.clicked').forEach(function(node) {
+                          toggleCell(node, false, false);
+                      });
+                      dojo.forEach(data, function (nodeID) {
+                          node = dojo.byId(nodeID);
+                          toggleCell(node, true, false);
+                      });
+                      setEvento("Eventos carregados");
+                },
+                error: function (error) {
+                    console.error('Error: ', error);
+                    setEvento("Erro ao carregar (" + error + ")");
+                }
+            });
+        }    
+        
+        
+        
+        var isSelecting = false;
+
+        var onTableMouseOut = function(node) {
+            //isSelecting = false;
+        }
+        
+        var onCellMouseOut = function(node) {
+            dojo.toggleClass(node, "mousing", false);
+        }
+        
+        var onCellMouseOver = function(node) {
+            if (isSelecting) {
+                if (!dojo.hasClass(node, "mousing")) {
+                    dojo.toggleClass(node, "mousing", true);
+                    onCellClick(node);
+                }
+            }    
+        }
     
-    var onCellMouseUp = function(node) {
-    //  isSelecting = false;    
-    }
+        var onCellMouseDown = function(node) {
+            isSelecting = !isSelecting;
+        }
+        
+        var onCellMouseUp = function(node) {
+        //    isSelecting = false;    
+        }
+        
+        var init = function(){
+            loadList();
+            
+            timer = new dojox.timing.Timer(saveInterval);
+            timer.onTick = timerTick;
+            timer.start();
+        };
     
-    var init = function(){
-      loadList();
-    };
-    
-    dojo.addOnLoad(init);
+        dojo.addOnLoad(init);
     </script>
 {% endblock %}
 {% block body %}
@@ -141,9 +200,8 @@
     
     <p><p>
     
-    
     <div style="float: left;">
-    <table id="tableHours" border=0  onmouseout='onTableMouseOut(this);'>
+    <table id="tableHours">
       <caption>Selecione seu horário abaixo:</caption>
       <thead>
         <tr>
@@ -168,11 +226,17 @@
     </div>
     <div style="float: left; padding: 10px; text-align: left; max-width: 500px;">
     
-    <button id="saveButton" dojotype="dijit.form.Button" onclick='saveList();' >
+    <p>
+    <input type="checkbox" checked="true" onClick="timerStartStop(this.checked);">
+        Salvar automaticamente
+    </input>    
+    </p>
+    
+    <button id="saveButton" dojotype="dijit.form.Button" disabled=true onclick='saveList();' >
       Salvar
     </button>
 
-    <button dojotype="dijit.form.Button" onclick='loadList();' >
+    <button id="cancelButton" dojotype="dijit.form.Button" disabled=true onclick='loadList();' >
       Cancelar
     </button>    
     
@@ -180,8 +244,9 @@
       Apagar todos
     </button>    
     
+    <br>
     <div id="eventReport">
-      <p>Event reporter</p>
+      <p>Status</p>
     </div>
 
     <p id="loadingText" style="display: none;">Carregando compromissos... Por favor, aguarde.</p>
@@ -194,6 +259,8 @@
     que os horários antigos serão carregados.</p>
     <p>Clique em Apagar todos para mudar todos os horários para desocupados.
     Lembre-se de salvar depois de apagar todos</p>
+    <p>Quando o modo de salvar automaticamente está ativo, a cada 5 segundos os eventos são salvados
+    caso algum tenha sido modificado.</p>
     
     
     </div>

@@ -6,7 +6,7 @@ www.roscripts.com
 
 table {
 		border-collapse:collapse;
-		background:#EFF4FB url(http://www.roscripts.com/images/teaser.gif) repeat-x;
+		background:#EFF4FB url(/static/images/teaser.gif) repeat-x;
 		border-left:1px solid #686868;
 		border-right:1px solid #686868;
 		font:0.8em/145% 'Trebuchet MS',helvetica,arial,verdana;
@@ -22,7 +22,7 @@ caption {
 		text-align: left;
 		font-size: 1.4em;
 		font-weight: bold;
-		text-transform: uppercase;
+		/*text-transform: uppercase;*/
 		color: #333;
 		background: transparent;
 }
@@ -49,11 +49,15 @@ tbody th, tbody td {
 
 .hourcell {
 		font-size: 90%;
+		padding:2px;
 }
 
 .cell {
+		padding:0px;
 		background-color: #FFFFFF;
 		min-width: 50px;
+		font-size: 90%
+		/*padding:2px;*/
 }
 
 tbody th {

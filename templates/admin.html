@@ -61,7 +61,7 @@
   <h2>Usuários</h2>
   {% for membro in membros %}
     <div id="{{ membro.userid }}" class="box rectbox">
-        <h2>{{ membro.membro.user }}</h2>
+        <h2><img src="/static/images/user.png"> {{ membro.membro.user }}</h2>
         <h4>{{ membro.userid }}</h4>
         {% if membro.allow_edit %}
             <form method="POST" id="{{ membro.userid }}-form">
@@ -71,16 +71,22 @@
                 <input type="hidden" name="action" value="editarUsuario">
                 <input type="hidden" name="userID" value="{{ membro.userid }}">
             </form>
-            <a href="#" onClick='onSaveClicked("{{ membro.userid }}");'>Salvar</a>
-            <a href="#" id="{{ membro.userid }}-actionButton" onclick='removeUser("{{ membro.userid }}");' >
+            <p><a href="{{ membro.view_url }}">
+                <img src="/static/images/time_go.png"> Ver Horários
+            </a></p>
+            <button id="{{ membro.userid }}-actionButton" onclick='removeUser("{{ membro.userid }}");'  >
                 Remover usuário
-            </a>
+            </button>
+            <button onClick='onSaveClicked("{{ membro.userid }}");'>
+                Salvar
+            </button>
+            <p id="{{ membro.userid }}-eventResponse"></p>            
         {% else %}
             <p>Nome: {{ membro.membro.nome }}</p>
-            <p>Gestão: {{ membro.membro.gestao }}</p>
+            <p>Gestão: {{ membro.membro.group }}</p>
             <p>Coordenador: {{ membro.membro.coordenador|yesno:"Sim,Não"}}</p>
         {% endif %}
-        <p id="{{ membro.userid }}-eventResponse"></p>
+        
     </div>
   {% endfor %}
 {% endblock %}

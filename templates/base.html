@@ -5,30 +5,82 @@
     <title>{% block title %}{{ application_name }}{% endblock %}</title>
     <link href="/static/css/base.css" rel="stylesheet" type="text/css"/ >
     <link href="/static/css/chrome.css" rel="stylesheet" type="text/css"/ >
-    <script src="http://www.google.com/jsapi"></script>
+    {% if offline %}
+    <script src="/static/js/dojo-1.2/dojo/dojo.js"></script>
+    {% else %}
+    <script src="http://ajax.googleapis.com/ajax/libs/dojo/1.2.3/dojo/dojo.xd.js"></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/dojo/1.2.3/dojox/timing.xd.js"></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/dojo/1.2.3/dojox/timing/_base.xd.js"></script>
+    <!--script src="http://www.google.com/jsapi"></script>
     <script type="text/javascript">
-    google.load("dojo", "1.2.3");
+        google.load("dojo", "1.2.3");
+    </script-->
+    {% endif %}
+    <script type="text/javascript">
+        var sendBug = function() {
+          dojo.xhrPost({
+              url: "/bug_tracker",
+              form: dojo.byId("bugForm"),
+              handleAs: 'json',
+              load: function(data){
+                  // alert("Done");
+                  // replace the form with the response
+                  var bugBox = dojo.byId("bugBox");
+                  var bugForm = dojo.byId("bugForm");
+                  if (data['success']) {
+                      bugBox.innerHTML = "Comentário submetido. <a href=\"/bug_tracker\">Clique aqui para ve-lo.</a>";
+                  }
+                  //form.innerHTML = 
+                  //form.innerHTML = data;
+                  //status = dojo.query("[id='status']", form)[0].innerHTML;                         
+                },
+              error: function(error) {
+                alert(error);
+              }
+          });            
+        };    
     </script>
     {% block head %}{% endblock %}
   </head>
-  <body>
-    
+  
+  <body>    
     <div id="header">
       <div class="top">
         <div class="login">
           {% if user %}
             <span class="item nickname">{{ user.nickname }}</span> |
             {% if membro %}
-            <span class="item">Gestão: {{ membro.gestao }} | </span>
+            <span class="item">Gestão: {{ membro.group }} | </span>            
+            <span class="item"><a href="/horario">Seu horário</a> | </span>
+            <span class="item"><a href="/horario?action=viewAll">Horário de todos</a> | </span>
+              {% if is_admin %}
+              <span class="item"><a href="/admin">Admin</a> | </span>
+              {% else %}
+              <span class="item"><a href="/admin">Editar dados</a> | </span>
+              {% endif %}
             {% endif %}
-            <span class="item"><a href="/">Horários</a> | </span>
-            <span class="item"><a href="/admin">Admin</a> | </span>
             <span class="item"><a href="{{ logout_url|escape }}">Sair</a></span>
           {% else %}
             <span class="item"><a href="{{ login_url|escape }}">Entrar</a></span>
           {% endif %}
         </div>
       </div>
+      {% if show_bug_tracker %}
+      <div>
+        <h4>Dúvidas, problemas e sugestões:</h4>
+        <div id="bugBox">
+        <form id="bugForm">
+          <textarea name="text" cols="80"></textarea>
+          <input type="hidden" name="action" value="post"></input>
+        </form>
+        <div>
+          <button onClick="sendBug();">Enviar</button>
+          <a href="/bug_tracker">Ver lista</a>
+        </div>
+        </div>
+        
+      </div>
+      {% endif %}
     </div>
     
     <div id="body">

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}{{ application_name }}{% endblock %}
+
+{% block head %}
+{% endblock %}
+
+{% block body %}
+  <h1>Bug Tracker</h1>
+  <div align="left">
+  {% for bug in bugs %}
+    <div class="box" style="width: 100%;">
+    <p><b>Por: </b>{{ bug.author }}</p>
+    <p><b>Data: </b>{{ bug.date_added|date:"D d M Y" }}</p>
+    <p>{{ bug.text|escape }}</p>
+    <p><b>Resolução: </b>{{ bug.solution }}</p>
+    </div>
+  {% endfor %}
+  </div>
+{% endblock %}

@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block title %}{{ application_name }}{% endblock %}
+
+{% block head %}
+    <link href="/static/css/table.css" rel="stylesheet" type="text/css"/ >
+    <script type="text/javascript">
+        var users = new Array();
+        
+        var setEvento = function(msg) {
+            dojo.byId("eventReport").innerHTML = msg;
+        }
+          
+        var toggleCell = function(node, state, color) {
+            dojo.toggleClass(node, "clicked", state);
+            if (state) {
+                if (!color)
+                    color = "red";
+                dojo.style(node, "backgroundColor", color);
+            } else {
+                if (!color)
+                    color = "white";
+                dojo.style(node, "backgroundColor", color);
+            };
+        };
+        
+        
+        var loadList = function () {
+            var loadingNode = dojo.byId("loadingText");
+            setEvento("Carregando...");
+            //dojo.fadeIn({node: loadingNode, duration: 1000}).play();
+            dojo.query(".userselect").forEach(function(node) {
+                node.setAttribute("disabled", true);
+            });
+            dojo.query('.clicked').forEach(function(node) {
+                toggleCell(node, false);
+                node.firstChild.innerHTML = "";
+            });
+            
+            dojo.xhrPost ({
+                url: '/horario',
+                handleAs: 'json',
+                content: {'action': 'getListUsers', 'user_ids': dojo.toJson(users)},
+                load: function (data) {
+                      var max_length = 0.0;
+                      for(var nodeID in data){
+                          var len = data[nodeID].length;
+                          if (len > max_length)
+                              max_length = parseFloat(len);
+                      }
+                      for(var nodeID in data){                          
+                          var membros = data[nodeID];
+                          node = dojo.byId(nodeID);                          
+                          //var red = new dojo.colorFromString("red");
+                          //var white = new dojo.colorFromString("white");
+                          //var new_color = dojo.blendColors(red, white, 0.5);
+                          var weight = ((max_length - membros.length + 1)/ max_length);
+                          var color = dojo.colorFromArray([255, Math.round(weight * 255), 0]);
+                          toggleCell(node, true, color);
+                          node.firstChild.innerHTML = membros.length;
+                      }
+                      setEvento("Eventos carregados");
+
+                      dojo.query(".userselect").forEach(function(node) { 
+                          node.removeAttribute("disabled");
+                      });
+                },
+                error: function (error) {
+                    console.error('Error: ', error);
+                    setEvento("Erro ao carregar (" + error + ")");
+                }
+            });
+        };
+        
+        var selectGroup = function (members_list) {
+            var members = dojo.fromJson(members_list);
+            dojo.query(".userselect").forEach(function(node) { 
+                toggleUser(node.id, false, true);
+            });            
+            dojo.forEach(members, function (userID) {
+                toggleUser(userID, true, true);
+            });
+            loadList();
+        };
+        
+        var selectAll = function () {
+            dojo.query(".userselect").forEach(function(node) {                 
+                toggleUser(node.id, true, true);
+            });
+            loadList();
+        };
+        
+        var limpar = function () {
+            dojo.query(".userselect").forEach(function(node) { 
+                toggleUser(node.id, false, true);
+            });
+            loadList();
+        };
+        
+        var toggleUser = function(userID, selected, check) {
+            var idx = users.indexOf(userID);
+            var node = dojo.byId(userID);
+            if (selected) {
+                if (check)
+                    //node.setAttribute("checked", true);
+                    node.checked = true;
+                if (idx == -1) {
+                    users.length = users.length + 1;
+                    users[users.length - 1] = userID;
+                };
+            } else {
+                if (check) {
+                    node.checked = false;
+                    //node.setAttribute("checked", false);
+                    //node.removeAttribute("checked");
+                }
+                users = dojo.filter(users, function (value) {
+                   return (value != userID)
+                });
+            };
+        };
+        
+        var onUserSelect = function (checkbox, userID) {
+            //setEvento(userID + " " + checkbox.checked);
+            toggleUser(userID, checkbox.checked, false);
+            //setEvento(idx + " " + users);
+            loadList();
+        };
+        
+        var init = function(){
+            loadList();
+        };
+    
+        dojo.addOnLoad(init);
+    </script>
+{% endblock %}
+{% block body %}
+    <h1>Horário</h1>
+    
+    <p><p>
+    
+    <div style="float: left;">
+    <table id="tableHours">
+      <caption>Selecione seu horário abaixo:</caption>
+      <thead>
+        <tr>
+          <th></th>
+          {% for day in days_of_week %}
+          <th scope="col">{{ day }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      
+      <tbody>
+        {% for hour in hours %}
+        <tr id="{{ hour }}" class="{% cycle odd,even %}">
+          <td class="hourcell">{{ hour }}:{% cycle 00,30 %}</td>  
+          {% for day in days_of_week %}
+          <td id="{{ forloop.counter0 }}_{{ forloop.parentloop.counter0 }}" class="cell"><div></div></td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <th></th>
+          {% for day in days_of_week %}
+          <th scope="col"></th>
+          {% endfor %}
+        </tr>
+      </tfoot>      
+    </table>    
+    </div>
+    <div style="float: left; padding: 10px; text-align: left; max-width: 500px;">
+    
+    <div id="eventReport">
+      <p> </p>
+    </div>
+    
+    <h2>Selecione os membros que você deseja visualizar os horários.</h2>
+    
+    <p>Seleciona pela gestão:</p>
+    <select name="groups">
+    <option onclick='selectGroup("[]");'></option>
+    {% for group in groups %}
+        <option value="{{ group.name }}" onclick='selectGroup("{{ group.members }}");'>{{ group.name }}</option>
+    {% endfor %}
+    </select>   
+    
+    <p>Ou, selecione individualmente:<p>
+    
+    <div id="usersSelect">
+        {% for membro in membros %}
+        <div style="width=200px;">
+        <p>
+            <input id="{{ membro.user.email }}" type="checkbox" class="userselect" onClick="onUserSelect(this, '{{ membro.user.email }}');">
+                {{ membro.nome }}
+            </input>
+        </p>
+        </div>
+        {% endfor %}
+    </div>
+    
+    
+    <button dojotype="dijit.form.Button" onclick='selectAll();' >
+      Selecionar Todos
+    </button>    
+    
+    <button dojotype="dijit.form.Button" onclick='limpar();' >
+      Limpar
+    </button>      
+    
+    </div>
+    
+{% endblock %}

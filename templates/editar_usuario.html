@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}{{ application_name }}{% endblock %}
+
+{% block head %}
+    <script type="text/javascript">
+        var setEvento = function (text, error) {
+            if (error) {
+                var img = "<img src=\"/static/images/exclamation.png\">";
+            } else {
+                var img = "<img src=\"/static/images/accept.png\">";
+            };
+            dojo.byId("eventResponse").innerHTML = img + " " + text;
+        };
+        
+        var saveAction = function() {
+          dojo.byId("eventResponse").innerHTML = "Aguarde...";
+          dojo.xhrPost({
+              url: "/admin",
+              form: dojo.byId("editForm"),
+              load: function(data){
+                  // replace the form with the response
+                  var form = dojo.byId("userForm");
+                  form.innerHTML = data;
+                  status = dojo.query("[id='status']", form)[0].innerHTML;                              
+                  if (status == "ok") {
+                      //form.innetHTML = "Por favor, aguarde...";
+                      if ({{ redirect }}) {
+                          window.location = '/';
+                      } else {
+                          setEvento("Atualizado", false);
+                      };
+                  } else {
+                      setEvento(status, true);
+                  };                
+                },
+              error: function(error) {
+                setEvento(error, true);
+              }
+          });
+        };
+  </script>
+{% endblock %}
+
+{% block body %}
+  <h1>{{ mensagem }}</h1>
+  <div>
+  <div class="loginbox">
+    <form id="editForm">
+      <div id="userForm">
+        {{ user_form }}
+      </div>
+      <input type=hidden name="action" value="editarUsuario">
+    </form>
+    <button dojotype="dijit.form.Button" onclick='saveAction();' style="float: right;" >
+        {{ button_text }}
+    </button>      
+    <div id="eventResponse"></div>
+  </div>
+  {% if show_all_link %}
+    <a href="{{ show_all_link }}">Ver todos os usuários</a>
+  {% endif %}
+  </div>
+{% endblock %}
