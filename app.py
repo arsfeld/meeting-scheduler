@@ -200,7 +200,9 @@ class Horarios(BaseRequestHandler):
             membro.put()
         elif action == "convertIcal":
             ical = vobject.iCalendar()
-            
+            compromissos = Membro.compromissos
+            for compromisso in compromissos:
+                print compromisso
         elif action == 'getListUsers':
             user_ids = json.loads(self.request.get('user_ids'))
             membros = [Membro.all().filter('user = ', users.User(user_id)).get() for user_id in user_ids]
