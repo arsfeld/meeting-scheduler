@@ -23,6 +23,8 @@ import os, sys
 import calendar
 import re
 import logging
+import dateutil
+import vobject
 
 from collections import defaultdict
 
@@ -64,6 +66,7 @@ class Membro(db.Model):
     group = db.StringProperty(required = True, verbose_name="Gestão", choices=GESTOES)
     coordenador = db.BooleanProperty(default=False)
     compromissos = db.ListProperty(str)
+    ical = db.StringProperty()
 
 class BugIssue(db.Model):
     author = db.UserProperty()
@@ -71,7 +74,7 @@ class BugIssue(db.Model):
     text = db.TextProperty(required = True)
     solution = db.StringProperty(choices = BUG_SOLUTIONS, default = BUG_SOLUTIONS[0])
     date_added = db.DateTimeProperty(auto_now_add = True)
-	date_modified = db.DateTimeProperty(auto_now = True)
+    date_modified = db.DateTimeProperty(auto_now = True)
 
 class MembroForm(djangoforms.ModelForm):
     class Meta:
@@ -195,6 +198,9 @@ class Horarios(BaseRequestHandler):
             #self.response.out.write(compromissos)
             membro.compromissos = compromissos
             membro.put()
+        elif action == "convertIcal":
+            ical = vobject.iCalendar()
+            
         elif action == 'getListUsers':
             user_ids = json.loads(self.request.get('user_ids'))
             membros = [Membro.all().filter('user = ', users.User(user_id)).get() for user_id in user_ids]
