@@ -8,7 +8,7 @@
         if (!confirm('Tem certeza de que deseja remover o usuario ' + userID + '?'))
             return
         dojo.byId(userID+"-actionButton").setAttribute("disabled", "disabled");
-        dojo.byId(userID+"-eventResponse").innerHTML = "<img src=\"/images/loading.gif\"> Removendo";        
+        dojo.byId(userID+"-eventResponse").innerHTML = "<img src=\"/static/images/time.png\"> Removendo";        
         var userNode = dojo.byId(userID);
         var onLoad = function(resp) {
           if (resp) {

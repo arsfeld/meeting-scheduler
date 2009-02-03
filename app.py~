@@ -46,7 +46,7 @@ from status import _OFFLINE
 
 APP_NAME = 'FoG Horarios 1.0 (RC1)'
 
-_DEBUG = False
+_DEBUG = True
 
 # Hora em que o dia começa
 DAY_START = 8

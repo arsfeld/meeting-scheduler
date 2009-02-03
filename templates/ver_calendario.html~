@@ -173,7 +173,7 @@
     
     <div id="rightSide">
     <table id="tableHours" class="tableHours">
-      <caption>Veja os horários abaixo:</caption>
+      <caption>Selecione seu horário abaixo:</caption>
       <thead>
         <tr>
           <th></th>

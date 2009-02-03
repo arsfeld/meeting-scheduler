@@ -74,7 +74,3 @@ tbody tr:hover {
 		background:#fafafa
 }
 
-.selected {
-    background:red;
-}
-

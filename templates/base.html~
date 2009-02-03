@@ -18,6 +18,13 @@
         djConfig="isDebug: {{ is_debug|yesno:"true,false"}}, parseOnLoad: true"
         src="http://o.aolcdn.com/dojo/1.2.3/dojo/dojo.xd.js">
     </script>
+    <!--script src="http://ajax.googleapis.com/ajax/libs/dojo/1.2.3/dojo/dojo.xd.js"></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/dojo/1.2.3/dojox/timing.xd.js"></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/dojo/1.2.3/dojox/timing/_base.xd.js"></script -->
+    <!--script src="http://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+        google.load("dojo", "1.2.3");
+    </script-->    
     {% endif %}
     {% if show_bug_tracker %}
     <script type="text/javascript">

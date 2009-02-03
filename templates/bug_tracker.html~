@@ -54,12 +54,12 @@
     <p>{{ bug.text|escape }}</p>
     {% if is_admin %}   
     <p><b>Resolução: </b>
-    <select  onchange='selectSolution("{{bug.key.id}}", this.options[this.selectedIndex].value);'>
+    <select style="align: center;" onchange='selectSolution("{{bug.key.id}}", this.options[this.selectedIndex].value);'>
         {% for form_solution in bug_solutions %}
           <option value="{{ form_solution }}" {% ifequal form_solution bug.solution %} selected="selected"{% endifequal %}>{{ form_solution }}</option>
         {% endfor %}
     </select>
-    <span style="align: center;" id="{{ bug.key.id }}_reporter"></span>
+    <span id="{{ bug.key.id }}_reporter"></span>
     </p>
     {% else %}
     <p><b>Resolução: </b>{{ bug.solution }}</p>

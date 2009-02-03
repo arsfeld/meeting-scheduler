@@ -14,7 +14,7 @@
         };
         
         var saveAction = function() {
-          dojo.byId("eventResponse").innerHTML = "Aguarde...";
+          dojo.byId("eventResponse").innerHTML = "<img src=\"/images/loading.gif\"> Aguarde...";
           dojo.xhrPost({
               url: "/admin",
               form: dojo.byId("editForm"),

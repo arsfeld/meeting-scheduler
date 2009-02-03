@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}{{ application_name }}{% endblock %}
+
+{% block head %}
+
+{% endblock %}
+
+{% block body %}
+  <div class="loginbox" style="width: 80%;">
+    <center><h2>Página não encontrada!</h2></center>
+  </div>
+{% endblock %}

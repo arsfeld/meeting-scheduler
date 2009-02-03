@@ -207,7 +207,7 @@
     </script>
 {% endblock %}
 {% block body %}
-    <h1>Editar horários</h1>
+    <h1>Editar Horários</h1>
         
     <div id="rightSide">
     <table id="tableHours">
