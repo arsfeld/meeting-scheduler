@@ -20,10 +20,20 @@
 __author__ = "Alexandre Rosenfeld"
 
 import os, sys
+
+sys.path.append(os.path.abspath("external/"))
+
+
+
 import calendar
 import re
 import logging
-import dateutil
+logging.info(sys.path)
+import datetime
+import cgi
+import math
+
+
 import vobject
 
 from collections import defaultdict
@@ -46,9 +56,12 @@ translation.activate('pt-br')
 
 from status import _OFFLINE
 
+#log = logging.getLogger("main")
+
 APP_NAME = 'FoG Horarios 1.0 (RC1)'
 
 _DEBUG = False
+
 
 # Hora em que o dia começa
 DAY_START = 8
@@ -198,11 +211,24 @@ class Horarios(BaseRequestHandler):
             #self.response.out.write(compromissos)
             membro.compromissos = compromissos
             membro.put()
-        elif action == "convertIcal":
+        elif action == "convertiCal":
             ical = vobject.iCalendar()
-            compromissos = Membro.compromissos
+            compromissos = membro.compromissos
+            data = []
             for compromisso in compromissos:
-                print compromisso
+                dia, hora = re.compile("^([\d]+)_([\d]+)$").search(compromisso).groups()
+                dia = int(dia)
+                dia_semana = DIAS_SEMANA[dia]
+                hora = int(hora) / 2.0 + DAY_START
+                minutos = int((hora - math.floor(hora)) * 60)
+                hora = math.floor(hora)
+                #data.append("Dia: %s, Hora: %s" % (dia, hora))
+                date = datetime.datetime(2009, 01, 16 + dia, hora, minutos)
+                data.append(str(date))
+                #data += compromisso
+            #    data += compromisso
+            #data = str(compromissos) + " :)"
+            self.response.out.write( cgi.escape(', \n'.join(data)).replace("\n", "<br>") )
         elif action == 'getListUsers':
             user_ids = json.loads(self.request.get('user_ids'))
             membros = [Membro.all().filter('user = ', users.User(user_id)).get() for user_id in user_ids]
