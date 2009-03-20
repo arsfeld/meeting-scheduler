@@ -154,24 +154,6 @@
             });    
         };
         
-        var loadiCal = function() {
-            //ical = "Fuck yeah"
-            //dojo.byId("ical").innerHTML = "<p>" + ical + "</p>";
-            var contents = {}
-            contents['action'] = 'convertiCal';
-            contents['userID'] = "{{ user_id }}";
-            dojo.xhrPost({ 
-                url: "/horario",
-                content: contents,
-                load: function(data) {
-                    dojo.byId("ical").innerHTML = "<p>" + data + "</p>";
-                },
-                error: function(error) {
-                    alert("Erro ao salvar (" + error + ")");
-                }
-            });                
-        }
-        
         var loadList = function () {
             var loadingNode = dojo.byId("loadingText");
             setEvento("<img src=\"/images/loading.gif\"> Carregando...");
@@ -293,13 +275,6 @@
     Lembre-se de salvar depois de apagar todos</p>
     <p>Quando o modo de salvar automaticamente está ativo, a cada 5 segundos os eventos são salvados
     caso algum tenha sido modificado.</p>
-    
-    
-    <button dojotype="dijit.form.Button" onclick="loadiCal();">Load iCall</button>
-    
-    <div id="ical">
-        <p>iCal</p>
-    </div>
     
     </div>
     

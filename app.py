@@ -20,26 +20,16 @@
 __author__ = "Alexandre Rosenfeld"
 
 import os, sys
-
-sys.path.append(os.path.abspath("external/"))
-
-
-
 import calendar
 import re
 import logging
-logging.info(sys.path)
 import datetime
 import cgi
 import math
-
-
-import vobject
-
 from collections import defaultdict
 
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "external"))
 import simplejson as json
-#from firepython.middleware import FirePythonWSGI
 
 from google.appengine.ext.webapp.util import run_wsgi_app
 
@@ -79,7 +69,7 @@ class Membro(db.Model):
     group = db.StringProperty(required = True, verbose_name="Gestão", choices=GESTOES)
     coordenador = db.BooleanProperty(default=False)
     compromissos = db.ListProperty(str)
-    ical = db.StringProperty()
+    #ical = db.StringProperty()
 
 class BugIssue(db.Model):
     author = db.UserProperty()
@@ -211,24 +201,6 @@ class Horarios(BaseRequestHandler):
             #self.response.out.write(compromissos)
             membro.compromissos = compromissos
             membro.put()
-        elif action == "convertiCal":
-            ical = vobject.iCalendar()
-            compromissos = membro.compromissos
-            data = []
-            for compromisso in compromissos:
-                dia, hora = re.compile("^([\d]+)_([\d]+)$").search(compromisso).groups()
-                dia = int(dia)
-                dia_semana = DIAS_SEMANA[dia]
-                hora = int(hora) / 2.0 + DAY_START
-                minutos = int((hora - math.floor(hora)) * 60)
-                hora = math.floor(hora)
-                #data.append("Dia: %s, Hora: %s" % (dia, hora))
-                date = datetime.datetime(2009, 01, 16 + dia, hora, minutos)
-                data.append(str(date))
-                #data += compromisso
-            #    data += compromisso
-            #data = str(compromissos) + " :)"
-            self.response.out.write( cgi.escape(', \n'.join(data)).replace("\n", "<br>") )
         elif action == 'getListUsers':
             user_ids = json.loads(self.request.get('user_ids'))
             membros = [Membro.all().filter('user = ', users.User(user_id)).get() for user_id in user_ids]
