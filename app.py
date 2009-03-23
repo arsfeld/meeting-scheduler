@@ -33,6 +33,16 @@ import simplejson as json
 
 from google.appengine.ext.webapp.util import run_wsgi_app
 
+# Force Django to reload its settings.
+from django.conf import settings
+settings._target = None
+
+# Must set this env var before importing any part of Django
+os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
+
+from django.utils import translation
+translation.activate('pt-br')
+
 from google.appengine.ext import db
 from google.appengine.api import datastore
 from google.appengine.api import datastore_types
@@ -41,17 +51,18 @@ from google.appengine.ext import webapp
 from google.appengine.ext.webapp import template
 from google.appengine.ext.db import djangoforms
 
-from django.utils import translation
-translation.activate('pt-br')
+try:
+  from django import newforms as forms
+except ImportError:
+  from django import forms
 
 from status import _OFFLINE
 
 #log = logging.getLogger("main")
 
-APP_NAME = 'FoG Horarios 1.0 (RC1)'
+APP_NAME = 'Semcomp Horarios'
 
-_DEBUG = False
-
+_DEBUG = True
 
 # Hora em que o dia começa
 DAY_START = 8
@@ -59,30 +70,41 @@ DAY_START = 8
 DIAS_SEMANA = ('Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado')
 # Gestões atuais
 #FIXME: Transforme isso em Model
-GESTOES = set([u"Projetos", u"Marketing", u"Desenvolvimento", u"Nenhuma gestao"])
+GROUPS = set([u"Infra-estrutura",
+               u"Concurso",
+               u"Marketing", 
+               u"Financeiro", 
+               u"Revista",
+               u"WICT",
+               u"Culturais",
+               u"Patrocinio",
+               u"Palestras"])
 
 BUG_SOLUTIONS = (u"Não resolvido", u"Não será resolvido", u"Em andamento", u"Resolvido")
 
 class Membro(db.Model):
     user = db.UserProperty()
     nome = db.StringProperty(required = True)
-    group = db.StringProperty(required = True, verbose_name="Gestão", choices=GESTOES)
+    group = db.StringListProperty(verbose_name="Frente")
     coordenador = db.BooleanProperty(default=False)
     compromissos = db.ListProperty(str)
-    #ical = db.StringProperty()
+    date_modified = db.DateTimeProperty(auto_now = True)
 
 class BugIssue(db.Model):
     author = db.UserProperty()
-    #text = db.StringProperty(required = True, multiline = True)
     text = db.TextProperty(required = True)
     solution = db.StringProperty(choices = BUG_SOLUTIONS, default = BUG_SOLUTIONS[0])
     date_added = db.DateTimeProperty(auto_now_add = True)
     date_modified = db.DateTimeProperty(auto_now = True)
 
 class MembroForm(djangoforms.ModelForm):
+    
+    group = forms.MultipleChoiceField(#required = False,
+                                       choices = [(group, group) for group in GROUPS], 
+                                       label = "Frentes")
     class Meta:
         model = Membro
-        exclude = ['user', 'compromissos']
+        exclude = ['user', 'compromissos', 'coordenador', 'group']
 
 #class BugForm(djangoforms.ModelForm):
 #    class Meta:
@@ -107,7 +129,7 @@ class BaseRequestHandler(webapp.RequestHandler):
             'login_url': users.CreateLoginURL(self.request.uri),
             'logout_url': users.CreateLogoutURL(self.request.uri),
             'membro': self.get_membro_atual(),
-            'gestoes': GESTOES,
+            'groups': GROUPS,
             'offline': _OFFLINE,
             'show_bug_tracker': True,
         }
@@ -178,7 +200,7 @@ class Horarios(BaseRequestHandler):
             )
         elif action == "viewAll":
             groups = []
-            for group in GESTOES:
+            for group in GROUPS:
                 user_ids = [membro.user.email() for membro in Membro.all().filter('group = ', group)]
                 groups.append({'members': javascript_string(user_ids), 'name': group})
             self.generate('ver_calendario.html',
@@ -224,12 +246,17 @@ class Horarios(BaseRequestHandler):
 class Admin(BaseRequestHandler):
     def createForm(self, membro):
         if self.allow_edit(membro):
-            return MembroForm(instance = membro).as_p()   
+            form = MembroForm(instance = membro)
+            form['group'].field.initial = membro.group 
+            return form.as_p()   
         else:
             return str(membro.user)
         
     def get(self):
         action, user, membro = self.parse_action()
+        if not membro:
+            self.redirect('/')
+            return        
         if users.is_current_user_admin() or action == "allUsers":
             membros = Membro.all()
             self.generate('admin.html',
@@ -241,8 +268,10 @@ class Admin(BaseRequestHandler):
                            } for membro in membros],
             )
         else:
+            form = MembroForm(instance = membro)
+            form['group'].field.initial = membro.group         
             self.generate('editar_usuario.html',
-                user_form = MembroForm(instance = membro).as_p(),
+                user_form = form.as_p(),
                 mensagem = "Seus dados",
                 button_text = "Salvar",
                 redirect = "false",
@@ -262,7 +291,25 @@ class Admin(BaseRequestHandler):
             else:
                 membro.delete()
         elif action == 'editarUsuario':
-            form = MembroForm(data=self.request.POST, instance=membro)
+            post_data = self.request.POST
+            logging.info(dir(post_data))
+            #logging.info()
+            post_data = post_data.dict_of_lists()
+            for key, value in post_data.iteritems():
+                if len(value) == 1 and key != "group":
+                    post_data[key] = value[0]
+                #logging.info((key, value))
+            logging.info(post_data)
+            form = MembroForm(data=post_data, instance=membro)
+            
+            #form.is_valid()
+            #logging.info(form)
+            #logging.info(self.request.POST)
+            #logging.info(dir(form))
+            #logging.info(self.request.POST["groups"])
+            #logging.info(form.non_field_errors())
+            #logging.info(form.clean())
+            #logging.info(form.data)
             if form.is_valid():
                 form.save(False)
                 if form.instance.user == None:
@@ -282,6 +329,9 @@ class Admin(BaseRequestHandler):
 class BugTracker(BaseRequestHandler):
     def get(self):
         action, user, membro = self.parse_action()
+        if not membro:
+            self.redirect('/')
+            return        
         if not action or action == "showAll":
             bugs = [bug for bug in BugIssue.all().order('-date_added')]
             self.generate("bug_tracker.html",
@@ -293,36 +343,36 @@ class BugTracker(BaseRequestHandler):
 
     def post(self):
         action, user, membro = self.parse_action()
-        if action == "post":        	
+        if action == "post":
             text = self.request.get('text')
             if not text.strip():
-            	self.send_json_response(False, message = "O texto não pode ser vazio")
+                self.send_json_response(False, message = "O texto não pode ser vazio")
             else:
-	            bug = BugIssue(author = users.GetCurrentUser(), text = text)
-    	        bug.put()
-    	        self.send_json_response(True)
-    	elif action == "update":
-    		if not users.is_current_user_admin():
-    			self.error(403)
-    		else:
-	    		bugID = self.request.get('key')
-    			solution = self.request.get("solution")
-    			bug = BugIssue.get_by_id(long(bugID))
-    			if bug:
-    				bug.solution = solution
-    				bug.put()
-    			else:
-    				self.error(404)
-    	elif action == "delete":
-    		bugID = self.request.get('key')    		
-    		if users.is_current_user_admin():
-    			bug = BugIssue.get_by_id(long(bugID))
-    			if bug:
-    				bug.delete()
-    			else:
-    				self.error(404)
-    		else:
-    			self.error(403)
+                bug = BugIssue(author = users.GetCurrentUser(), text = text)
+                bug.put()
+                self.send_json_response(True)
+        elif action == "update":
+            if not users.is_current_user_admin():
+                self.error(403)
+            else:
+                bugID = self.request.get('key')
+                solution = self.request.get("solution")
+                bug = BugIssue.get_by_id(long(bugID))
+                if bug:
+                    bug.solution = solution
+                    bug.put()
+                else:
+                    self.error(404)
+        elif action == "delete":
+            bugID = self.request.get('key')
+            if users.is_current_user_admin():
+                bug = BugIssue.get_by_id(long(bugID))
+                if bug:
+                    bug.delete()
+                else:
+                    self.error(404)
+            else:
+                self.error(403)
         else:
             self.error(404)
 

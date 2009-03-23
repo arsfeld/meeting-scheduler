@@ -67,10 +67,9 @@
         <div class="login">
           {% if user %}
             <span class="item nickname">{{ user.nickname }}</span> |
-            {% if membro %}
-            <span class="item">Gestão: {{ membro.group }} | </span>            
-            <span class="item"><a href="/horario">Seu horário</a> | </span>
-            <span class="item"><a href="/horario?action=viewAll">Horário de todos</a> | </span>
+            {% if membro %}      
+            <span class="item"><a href="/horario">Editar seu horário</a> | </span>
+            <span class="item"><a href="/horario?action=viewAll">Ver horário de todos</a> | </span>
               {% if is_admin %}
               <span class="item"><a href="/admin">Admin</a> | </span>
               {% else %}
