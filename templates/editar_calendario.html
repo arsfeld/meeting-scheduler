@@ -113,7 +113,7 @@
         var saveList = function () {
             setEvento("<img src=\"/images/loading.gif\"> Salvando...");
             var saveButton = dojo.byId("saveButton");
-            var saveButtonDisabled = saveButton.hasAttribute("disabled");
+            var saveButtonDisabled = (saveButton.getAttribute("disabled") != null);
             saveButton.setAttribute("disabled", "disabled");
             ids = dojo.query('.clicked').map(function (node) {
                 return node.id

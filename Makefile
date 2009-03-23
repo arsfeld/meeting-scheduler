@@ -1,9 +1,9 @@
 
 server:
-	../google_appengine/dev_appserver.py .
+	~/bin/google_appengine/dev_appserver.py .
 
 upload: online
-	../google_appengine/appcfg.py update .
+	~/bin/google_appengine/appcfg.py update .
 
 online:
 	echo "_OFFLINE = False" > status.py
